@@ -9,26 +9,9 @@ import {
   stepCountIs
 } from "ai";
 import { z } from "zod";
+import type { GoalState, Goal, Step, StepStatus } from "./types";
 
-type StepStatus = "Not Started" | "In Progress" | "Completed";
 
-interface Step{
-  id: string;
-  title: string;
-  description: string;
-  status: StepStatus;
-}
-
-interface Goal{
-  id: string;
-  title: string;
-  steps: Step[];
-  createdAt: Date;
-}
-
-type GoalState = {
-  goals: Goal[];
-};
 
 
 export class ChatAgent extends AIChatAgent<Env, GoalState> {
@@ -138,7 +121,7 @@ export class ChatAgent extends AIChatAgent<Env, GoalState> {
             const newGoal: Goal = {
               id: crypto.randomUUID(),
               title,
-              createdAt: new Date(),
+              createdAt: new Date().toISOString(),
               steps: steps.map((step) => ({
                 id: crypto.randomUUID(),
                 title: step.title,
