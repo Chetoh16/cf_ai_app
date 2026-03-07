@@ -562,7 +562,11 @@ function Chat() {
             <Text bold size="sm">Goals</Text>
           </div>
           <div className="flex-1 overflow-hidden">
-            <GoalPanel goals={goalState.goals} />
+            <GoalPanel goals={goalState.goals}
+              onUpdateStep={async(goalId: string, stepId: string, nextStatus: StepStatus) => {
+                await agent.call("updateStepStatus", [goalId, stepId, nextStatus]);
+              }}
+            />
           </div>
         </aside>
 
@@ -578,10 +582,9 @@ function Chat() {
                   contents={
                     <div className="flex flex-wrap justify-center gap-2">
                       {[
-                        "What's the weather in Paris?",
-                        "What timezone am I in?",
-                        "Calculate 5000 * 3",
-                        "Remind me in 5 minutes to take a break"
+                        "I want to learn Turkish",
+                        "Help me plan a wedding?",
+                        "I want to build an awesomesauce side-project",
                       ].map((prompt) => (
                         <Button
                           key={prompt}

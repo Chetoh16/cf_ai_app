@@ -51,7 +51,34 @@ export class ChatAgent extends AIChatAgent<Env, GoalState> {
     await this.removeMcpServer(serverId);
   }
 
-  
+  @callable()
+  async updateStepStatus(goalId: string, stepId: string, status: StepStatus) {
+    const goal = this.state.goals.find((g) => g.id === goalId);
+    if (!goal) {
+      return { updated: false, error: "Goal not found" };
+    }
+    
+    const step = goal.steps.find((s) => s.id === stepId);
+    if (!step) {
+      return { updated: false, error: "Step not found" };
+    }
+    
+    this.setState({
+      goals: this.state.goals.map((g) =>
+        g.id === goalId
+          ? {
+              ...g,
+              steps: g.steps.map((s) =>
+                s.id === stepId ? { ...s, status } : s
+              ),
+            }
+          : g
+      ),
+    });
+
+    return { updated: true, stepTitle: step.title, status };
+  }
+
   private buildPrompt(): string {
     const hasGoals = this.state.goals.length > 0;
     let goalsContext = "";

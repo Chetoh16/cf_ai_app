@@ -1,7 +1,14 @@
-import type { Goal } from "../types";
-import { Surface, Text, Badge } from "@cloudflare/kumo";
+import type { Goal, StepStatus } from "../types";
+import { Surface, Text, Badge, Button } from "@cloudflare/kumo";
 
-export function GoalPanel({ goals }: { goals: Goal[] }) {
+
+interface GoalPanelProps {
+  goals: Goal[];
+  onUpdateStep: (goalId: string, stepId: string, status: StepStatus) => void;
+}
+
+
+export function GoalPanel({ goals, onUpdateStep }: GoalPanelProps) {
   if (goals.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 px-8 text-center">
@@ -44,7 +51,24 @@ export function GoalPanel({ goals }: { goals: Goal[] }) {
                     <Text size="xs" variant="secondary">{step.description}</Text>
                     </span>
                   </div>
-                  <Badge variant="secondary">{step.status}</Badge>
+                  <Button 
+                    variant="secondary" 
+                    size="sm" 
+                    onClick={() => {
+                        let nextStatus: StepStatus = "Not Started";
+
+                        // Cycle through statuses: Not Started -> In Progress -> Completed -> Not Started
+                        if (step.status === "Not Started") nextStatus = "In Progress";
+                        else if (step.status === "In Progress") nextStatus = "Completed";
+                        else if (step.status === "Completed") nextStatus = "Not Started";
+
+                        onUpdateStep(goal.id, step.id, nextStatus);
+                    }}
+                  >
+                    {step.status === "Not Started" && "⏳ Not Started"}
+                    {step.status === "In Progress" && "🔄 In Progress"}
+                    {step.status === "Completed" && "✅ Completed"}
+                  </Button>
                 </div>
               ))}
             </div>
