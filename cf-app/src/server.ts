@@ -34,6 +34,11 @@ export class ChatAgent extends AIChatAgent<Env, GoalState> {
   // Wait for MCP connections to restore after hibernation before processing messages
   waitForMcpConnections = true;
 
+  // Default state for new agents
+  initialState: GoalState = {
+    goals: []
+  };
+
   onStart() {
     // Configure OAuth popup behavior for MCP servers that require authentication
     this.mcp.configureOAuthCallback({
@@ -86,10 +91,43 @@ export class ChatAgent extends AIChatAgent<Env, GoalState> {
           description:
             "Save a goal with actionable steps. The input is a goal description and a list of steps to achieve it. Use this tool whenever the user describes a new goal or task, and break it down into clear steps.",
           inputSchema: z.object({
-            goal: z.string().describe("The overall goal or task")
+            title: z.string().describe("A short title for the goal"),
+            steps: z.array(
+              z.object({
+                title: z.string().describe("A short title for the step"),
+                description: z.string().describe("A detailed description of the step, i.e. what needs to be done to complete it"),
+              })
+            )
+            .min(1, "A goal must have at least one step")
+            .max (10, "A goal can have at most 10 steps")
+            .describe("A list of actionable steps to achieve the goal")
           }),
-          needsApproval: async (input) => true, // or conditional logic
-          execute: async (input) => { /* runs after approval */ }
+          execute: async ({title, steps}) => {
+            const newGoal: Goal = {
+              id: crypto.randomUUID(),
+              title,
+              createdAt: new Date(),
+              steps: steps.map((step) => ({
+                id: crypto.randomUUID(),
+                title: step.title,
+                description: step.description,
+                status: "Not Started"
+              })),
+            };
+
+
+            this.setState({
+              goals: [...this.state.goals, newGoal]
+            });
+
+            return{
+              saved: true,
+              goalId: newGoal.id,
+              stepCount: newGoal.steps.length
+            }
+
+          }
+          
         }),
 
       },
