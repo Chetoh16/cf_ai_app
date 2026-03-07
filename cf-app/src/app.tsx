@@ -217,7 +217,7 @@ function Chat() {
 
 
   const agent = useAgent({
-    agent: "GoalAgent",
+    agent: "ChatAgent",
     onOpen: useCallback(() => setConnected(true), []),
     onClose: useCallback(() => setConnected(false), []),
     onError: useCallback(
