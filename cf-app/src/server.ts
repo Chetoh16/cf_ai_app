@@ -226,6 +226,32 @@ export class ChatAgent extends AIChatAgent<Env, GoalState> {
           },
         }),
 
+        // Delete a goal
+        deleteGoal: tool({
+          description: "Delete a goal and all its steps. Call this when the user wants to completely remove a goal from their list.",
+          inputSchema: z.object({
+            goalId: z.string().describe("The ID of the goal to delete"),
+          }),
+          execute: async ({ goalId }) => {
+            const goal = this.state.goals.find((g) => g.id === goalId);
+            if (!goal) return {
+              deleted: false, error: "Goal not found" 
+            };
+
+
+            this.setState({
+              // filter creates a new array without the deleted goal
+              goals: this.state.goals.filter((g) => g.id !== goalId)
+            });
+
+            return {
+              deleted: true,
+              goalTitle: goal.title,
+            };
+          },
+        }),
+
+
       },
       stopWhen: stepCountIs(5),
       abortSignal: options?.abortSignal
