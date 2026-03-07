@@ -166,7 +166,36 @@ export class ChatAgent extends AIChatAgent<Env, GoalState> {
 
             return { updated: true, stepTitle: step.title, status };
           },
+        }),
 
+        // Replan a goal
+        replanGoal: tool({
+          description: "Remove all incomplete steps from a goal so it can be replanned. Call this when the user is stuck or wants to change direction. After calling this, immediately call saveGoal with fresh steps.",
+          inputSchema: z.object({
+            goalId: z.string().describe("The ID of the goal to replan"),
+          }),
+          execute: async ({ goalId }) => {
+            const goal = this.state.goals.find((g) => g.id === goalId);
+            if (!goal) return {
+              replanned: false, error: "Goal not found" 
+            };
+
+            const completedSteps = goal.steps.filter(
+              (s) => s.status === "Completed"
+            );
+
+            this.setState({
+              goals: this.state.goals.map((g) =>
+                g.id === goalId ? { ...g, steps: completedSteps } : g
+              ),
+            });
+
+            return {
+              replanned: true,
+              goalTitle: goal.title,
+              keptSteps: completedSteps.length,
+            };
+          },
         }),
 
       },
