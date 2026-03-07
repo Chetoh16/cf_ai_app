@@ -68,16 +68,45 @@ export class ChatAgent extends AIChatAgent<Env, GoalState> {
     await this.removeMcpServer(serverId);
   }
 
+  
+  private buildPrompt(): string {
+    const hasGoals = this.state.goals.length > 0;
+    let goalsContext = "";
+    
+    
+    if (hasGoals) {
+      goalsContext = "The user currently has the following goals:\n";
+      goalsContext += this.state.goals.map((g) => {
+        let goalText = `Goal: "${g.title}" (id: ${g.id})\n`;
+        goalText += "Steps:\n";
+        goalText += g.steps.map((s) => `  - [${s.id}] ${s.title} — ${s.status}`).join("\n");
+        return goalText;
+      }).join("\n");
+    } else {
+      goalsContext = "The user has no goals yet.";
+    }
+
+    const promptMessage = "You are a goal planning assistant. You help users set goals, track progress, and replan when they get stuck.\n\n" +
+    goalsContext +
+    "\n\nRules:\n" +
+    "- When a user describes a NEW goal, call saveGoal to break it into steps and save it.\n" +
+    "- When a user says they started, finished, or are blocked on a step, call updateStep with the correct status.\n" +
+    "- When a user is stuck or wants to replan, call replanGoal to clear remaining steps, then add fresh ones.\n" +
+    "- Always use the exact goal and step IDs shown above — never invent them.\n" +
+    "- After any tool call, give a short friendly confirmation.\n" +
+    "- Use Not Started, In Progress, Completed when listing steps.";
+
+    return promptMessage;    
+  }
+
+
   async onChatMessage(_onFinish: unknown, options?: OnChatMessageOptions) {
     const mcpTools = this.mcp.getAITools();
     const workersai = createWorkersAI({ binding: this.env.AI });
 
     const result = streamText({
       model: workersai("@cf/zai-org/glm-4.7-flash"),
-      system: `You are a goal planning assistant. When a user describes a goal or task, 
-      you MUST call the saveGoal tool to break it into clear, actionable steps and save it.
-      After saving, give a brief confirmation listing the steps you created.
-      If the user asks to see their goals, list them from state`,
+      system: this.buildPrompt(),
 
       // Prune old tool calls to save tokens on long conversations
       messages: pruneMessages({
@@ -185,8 +214,7 @@ export class ChatAgent extends AIChatAgent<Env, GoalState> {
             );
 
             this.setState({
-              goals: this.state.goals.map((g) =>
-                g.id === goalId ? { ...g, steps: completedSteps } : g
+              goals: this.state.goals.map((g) => g.id === goalId ? { ...g, steps: completedSteps } : g
               ),
             });
 
