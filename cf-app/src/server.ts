@@ -91,6 +91,7 @@ export class ChatAgent extends AIChatAgent<Env, GoalState> {
     "\n\nRules:\n" +
     "- When a user describes a NEW goal, call saveGoal to break it into steps and save it.\n" +
     "- When a user says they started, finished, or are blocked on a step, call updateStep with the correct status.\n" +
+    "- When a user wants to delete a goal, call deleteGoal with the correct goal ID.\n" +
     "- When a user is stuck or wants to replan, call replanGoal to clear remaining steps, then add fresh ones.\n" +
     "- Always use the exact goal and step IDs shown above — never invent them.\n" +
     "- After any tool call, give a short friendly confirmation.\n" +
