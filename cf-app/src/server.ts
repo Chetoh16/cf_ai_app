@@ -10,7 +10,27 @@ import {
 } from "ai";
 import { z } from "zod";
 
-export class ChatAgent extends AIChatAgent<Env> {
+type StepStatus = "Not Started" | "In Progress" | "Completed";
+
+interface Step{
+  id: string;
+  description: string;
+  status: StepStatus;
+}
+
+interface Goal{
+  id: string;
+  title: string;
+  steps: Step[];
+  createdAt: Date;
+}
+
+type GoalState = {
+  goals: Goal[];
+};
+
+
+export class ChatAgent extends AIChatAgent<Env, GoalState> {
   // Wait for MCP connections to restore after hibernation before processing messages
   waitForMcpConnections = true;
 
@@ -68,9 +88,8 @@ export class ChatAgent extends AIChatAgent<Env> {
           inputSchema: z.object({
             goal: z.string().describe("The overall goal or task")
           }),
-          execute: async ({ goal }) => {
-            return `Goal saved: "${goal}"`;
-          }
+          needsApproval: async (input) => true, // or conditional logic
+          execute: async (input) => { /* runs after approval */ }
         }),
 
       },
