@@ -35,6 +35,9 @@ import {
   XIcon,
   WrenchIcon
 } from "@phosphor-icons/react";
+import type { GoalState, Goal, Step, StepStatus } from "./types";
+
+
 
 // ── Small components ──────────────────────────────────────────────────
 
@@ -209,14 +212,20 @@ function Chat() {
   const [isAddingServer, setIsAddingServer] = useState(false);
   const mcpPanelRef = useRef<HTMLDivElement>(null);
 
+  const [goalState, setGoalState] = useState<GoalState>({ goals: [] });
+
+
   const agent = useAgent({
-    agent: "ChatAgent",
+    agent: "GoalAgent",
     onOpen: useCallback(() => setConnected(true), []),
     onClose: useCallback(() => setConnected(false), []),
     onError: useCallback(
       (error: Event) => console.error("WebSocket error:", error),
       []
     ),
+    onStateUpdate: useCallback((state: GoalState) => {
+      setGoalState(state);
+    }, []),
     onMcpUpdate: useCallback((state: MCPServersState) => {
       setMcpState(state);
     }, []),
