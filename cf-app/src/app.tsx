@@ -36,6 +36,7 @@ import {
   WrenchIcon
 } from "@phosphor-icons/react";
 import type { GoalState, Goal, Step, StepStatus } from "./types";
+import { GoalPanel } from "./components/GoalPanel";
 
 
 
