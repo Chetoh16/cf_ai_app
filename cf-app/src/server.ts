@@ -14,6 +14,7 @@ type StepStatus = "Not Started" | "In Progress" | "Completed";
 
 interface Step{
   id: string;
+  title: string;
   description: string;
   status: StepStatus;
 }
@@ -87,6 +88,7 @@ export class ChatAgent extends AIChatAgent<Env, GoalState> {
         // MCP tools from connected servers
         ...mcpTools,
 
+        // Save a new goal with steps
         saveGoal: tool({
           description:
             "Save a goal with actionable steps. The input is a goal description and a list of steps to achieve it. Use this tool whenever the user describes a new goal or task, and break it down into clear steps.",
@@ -128,6 +130,43 @@ export class ChatAgent extends AIChatAgent<Env, GoalState> {
 
           }
           
+        }),
+
+        // Update the status of a step
+        updateStep: tool({
+          description: "Update the status of a specific step within a goal. Call this when the user says they started, completed, or are blocked on a step.",
+          inputSchema: z.object({
+            goalId: z.string().describe("The ID of the goal"),
+            stepId: z.string().describe("The ID of the step to update"),
+            status: z.enum(["Not Started", "In Progress", "Completed"]).describe("The new status of the step")
+          }),
+          execute: async ({goalId, stepId, status}) => {
+            const goal = this.state.goals.find((g) => g.id === goalId);
+            if (!goal) {
+              return { updated: false, error: "Goal not found" };
+            }
+
+            const step = goal.steps.find((s) => s.id === stepId);
+            if (!step) {
+              return { updated: false, error: "Step not found" };
+            }
+            
+            this.setState({
+              goals: this.state.goals.map((g) =>
+                g.id === goalId
+                  ? {
+                      ...g,
+                      steps: g.steps.map((s) =>
+                        s.id === stepId ? { ...s, status } : s
+                      ),
+                    }
+                  : g
+              ),
+            });
+
+            return { updated: true, stepTitle: step.title, status };
+          },
+
         }),
 
       },
