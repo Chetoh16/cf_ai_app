@@ -6,10 +6,11 @@ import { useState } from "react";
 interface GoalPanelProps {
   goals: Goal[];
   onUpdateStep: (goalId: string, stepId: string, status: StepStatus) => void;
+  onRenameGoal: (goalId: string, newTitle: string) => void;
 }
 
 
-export function GoalPanel({ goals, onUpdateStep }: GoalPanelProps) {
+export function GoalPanel({ goals, onUpdateStep, onRenameGoal }: GoalPanelProps) {
   // Local state to track which goal/step is being edited, and the draft title/description
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -43,7 +44,7 @@ export function GoalPanel({ goals, onUpdateStep }: GoalPanelProps) {
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   onBlur={() => {
-                    console.log("saving:", draft);
+                    onRenameGoal(goal.id, draft);
                     setEditingId(null);
                   }}
                   onKeyDown={(e) => {
