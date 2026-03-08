@@ -566,6 +566,9 @@ function Chat() {
               onUpdateStep={async(goalId: string, stepId: string, nextStatus: StepStatus) => {
                 await agent.call("updateStepStatus", [goalId, stepId, nextStatus]);
               }}
+              onRenameGoal={async(goalId: string, newTitle: string) => {
+                await agent.call("renameGoal", [goalId, newTitle]);
+              }}            
             />
           </div>
         </aside>
