@@ -51,6 +51,24 @@ export class ChatAgent extends AIChatAgent<Env, GoalState> {
     await this.removeMcpServer(serverId);
   }
 
+  // Function to rename a goal's title
+  @callable()
+  async renameGoal(goalId: string, newTitle:string){
+    const goal = this.state.goals.find((g) => g.id === goalId);
+    if (!goal){
+      return { renamed: false, error: "Goal not found" };
+    }
+    
+    this.setState({
+      goals: this.state.goals.map((g) =>
+        g.id === goalId ? { ...g, title: newTitle } : g
+      ),
+    });
+
+    return { renamed: true, goalId, newTitle };
+
+  }
+
   @callable()
   async updateStepStatus(goalId: string, stepId: string, status: StepStatus) {
     const goal = this.state.goals.find((g) => g.id === goalId);

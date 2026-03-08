@@ -49,8 +49,7 @@ export function GoalPanel({ goals, onUpdateStep, onRenameGoal }: GoalPanelProps)
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
-                      // save logic will go here
-                      console.log("saving:", draft);
+                      onRenameGoal(goal.id, draft);
                       setEditingId(null);
                     }
                     if (e.key === "Escape") setEditingId(null);
