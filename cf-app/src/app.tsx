@@ -35,6 +35,10 @@ import {
   XIcon,
   WrenchIcon
 } from "@phosphor-icons/react";
+import type { GoalState, Goal, Step, StepStatus } from "./types";
+import { GoalPanel } from "./components/GoalPanel";
+
+
 
 // ── Small components ──────────────────────────────────────────────────
 
@@ -209,6 +213,9 @@ function Chat() {
   const [isAddingServer, setIsAddingServer] = useState(false);
   const mcpPanelRef = useRef<HTMLDivElement>(null);
 
+  const [goalState, setGoalState] = useState<GoalState>({ goals: [] });
+
+
   const agent = useAgent({
     agent: "ChatAgent",
     onOpen: useCallback(() => setConnected(true), []),
@@ -217,6 +224,9 @@ function Chat() {
       (error: Event) => console.error("WebSocket error:", error),
       []
     ),
+    onStateUpdate: useCallback((state: GoalState) => {
+      setGoalState(state);
+    }, []),
     onMcpUpdate: useCallback((state: MCPServersState) => {
       setMcpState(state);
     }, []),
@@ -338,7 +348,7 @@ function Chat() {
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h1 className="text-lg font-semibold text-kumo-default">
-              <span className="mr-2">⛅</span>Agent Starter
+              <span className="mr-2">ヽ༼ ͡☉ ͜ʖ ͡☉ ༽ﾉ</span>Go Go Goal
             </h1>
             <Badge variant="secondary">
               <ChatCircleDotsIcon size={12} weight="bold" className="mr-1" />
@@ -541,200 +551,222 @@ function Chat() {
           </div>
         </div>
       </header>
+      
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-5 py-6 space-y-5">
-          {messages.length === 0 && (
-            <Empty
-              icon={<ChatCircleDotsIcon size={32} />}
-              title="Start a conversation"
-              contents={
-                <div className="flex flex-wrap justify-center gap-2">
-                  {[
-                    "What's the weather in Paris?",
-                    "What timezone am I in?",
-                    "Calculate 5000 * 3",
-                    "Remind me in 5 minutes to take a break"
-                  ].map((prompt) => (
-                    <Button
-                      key={prompt}
-                      variant="outline"
-                      size="sm"
-                      disabled={isStreaming}
-                      onClick={() => {
-                        sendMessage({
-                          role: "user",
-                          parts: [{ type: "text", text: prompt }]
-                        });
-                      }}
-                    >
-                      {prompt}
-                    </Button>
-                  ))}
-                </div>
-              }
-            />
-          )}
+      {/* Replace the single messages div with this split pane */}
+      <div className="flex flex-1 overflow-hidden">
 
-          {messages.map((message: UIMessage, index: number) => {
-            const isUser = message.role === "user";
-            const isLastAssistant =
-              message.role === "assistant" && index === messages.length - 1;
-
-            return (
-              <div key={message.id} className="space-y-2">
-                {showDebug && (
-                  <pre className="text-[11px] text-kumo-subtle bg-kumo-control rounded-lg p-3 overflow-auto max-h-64">
-                    {JSON.stringify(message, null, 2)}
-                  </pre>
-                )}
-
-                {/* Tool parts */}
-                {message.parts.filter(isToolUIPart).map((part) => (
-                  <ToolPartView
-                    key={part.toolCallId}
-                    part={part}
-                    addToolApprovalResponse={addToolApprovalResponse}
-                  />
-                ))}
-
-                {/* Reasoning parts */}
-                {message.parts
-                  .filter(
-                    (part) =>
-                      part.type === "reasoning" &&
-                      (part as { text?: string }).text?.trim()
-                  )
-                  .map((part, i) => {
-                    const reasoning = part as {
-                      type: "reasoning";
-                      text: string;
-                      state?: "streaming" | "done";
-                    };
-                    const isDone = reasoning.state === "done" || !isStreaming;
-                    return (
-                      <div key={i} className="flex justify-start">
-                        <details className="max-w-[85%] w-full" open={!isDone}>
-                          <summary className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg bg-purple-500/10 border border-purple-500/20 text-sm select-none">
-                            <BrainIcon size={14} className="text-purple-400" />
-                            <span className="font-medium text-kumo-default">
-                              Reasoning
-                            </span>
-                            {isDone ? (
-                              <span className="text-xs text-kumo-success">
-                                Complete
-                              </span>
-                            ) : (
-                              <span className="text-xs text-kumo-brand">
-                                Thinking...
-                              </span>
-                            )}
-                            <CaretDownIcon
-                              size={14}
-                              className="ml-auto text-kumo-inactive"
-                            />
-                          </summary>
-                          <pre className="mt-2 px-3 py-2 rounded-lg bg-kumo-control text-xs text-kumo-default whitespace-pre-wrap overflow-auto max-h-64">
-                            {reasoning.text}
-                          </pre>
-                        </details>
-                      </div>
-                    );
-                  })}
-
-                {/* Text parts */}
-                {message.parts
-                  .filter((part) => part.type === "text")
-                  .map((part, i) => {
-                    const text = (part as { type: "text"; text: string }).text;
-                    if (!text) return null;
-
-                    if (isUser) {
-                      return (
-                        <div key={i} className="flex justify-end">
-                          <div className="max-w-[85%] px-4 py-2.5 rounded-2xl rounded-br-md bg-kumo-contrast text-kumo-inverse leading-relaxed">
-                            {text}
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div key={i} className="flex justify-start">
-                        <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-kumo-base text-kumo-default leading-relaxed">
-                          <Streamdown
-                            className="sd-theme rounded-2xl rounded-bl-md p-3"
-                            controls={false}
-                            isAnimating={isLastAssistant && isStreaming}
-                          >
-                            {text}
-                          </Streamdown>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-            );
-          })}
-
-          <div ref={messagesEndRef} />
-        </div>
-      </div>
-
-      {/* Input */}
-      <div className="border-t border-kumo-line bg-kumo-base">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            send();
-          }}
-          className="max-w-3xl mx-auto px-5 py-4"
-        >
-          <div className="flex items-end gap-3 rounded-xl border border-kumo-line bg-kumo-base p-3 shadow-sm focus-within:ring-2 focus-within:ring-kumo-ring focus-within:border-transparent transition-shadow">
-            <InputArea
-              ref={textareaRef}
-              value={input}
-              onValueChange={setInput}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  send();
-                }
-              }}
-              onInput={(e) => {
-                const el = e.currentTarget;
-                el.style.height = "auto";
-                el.style.height = `${el.scrollHeight}px`;
-              }}
-              placeholder="Send a message..."
-              disabled={!connected || isStreaming}
-              rows={1}
-              className="flex-1 ring-0! focus:ring-0! shadow-none! bg-transparent! outline-none! resize-none max-h-40"
-            />
-            {isStreaming ? (
-              <Button
-                type="button"
-                variant="secondary"
-                shape="square"
-                aria-label="Stop generation"
-                icon={<StopIcon size={18} />}
-                onClick={stop}
-                className="mb-0.5"
-              />
-            ) : (
-              <Button
-                type="submit"
-                variant="primary"
-                shape="square"
-                aria-label="Send message"
-                disabled={!input.trim() || !connected}
-                icon={<PaperPlaneRightIcon size={18} />}
-                className="mb-0.5"
-              />
-            )}
+        {/* Left - Goal panel */}
+        <aside className="w-96 shrink-0 border-r border-kumo-line bg-kumo-base flex flex-col">
+          <div className="px-4 py-3 border-b border-kumo-line shrink-0">
+            <Text bold size="sm">Goals</Text>
           </div>
-        </form>
+          <div className="flex-1 overflow-hidden">
+            <GoalPanel goals={goalState.goals}
+              onUpdateStep={async(goalId: string, stepId: string, nextStatus: StepStatus) => {
+                await agent.call("updateStepStatus", [goalId, stepId, nextStatus]);
+              }}
+            />
+          </div>
+        </aside>
+
+        {/* Right — AI Agent */}
+        <div className="flex flex-col flex-1 overflow-hidden">
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-3xl mx-auto px-5 py-6 space-y-5">
+              {messages.length === 0 && (
+                <Empty
+                  icon={<ChatCircleDotsIcon size={32} />}
+                  title="Start a conversation"
+                  contents={
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {[
+                        "I want to learn Turkish",
+                        "Help me plan a wedding?",
+                        "I want to build an awesomesauce side-project",
+                      ].map((prompt) => (
+                        <Button
+                          key={prompt}
+                          variant="outline"
+                          size="sm"
+                          disabled={isStreaming}
+                          onClick={() => {
+                            sendMessage({
+                              role: "user",
+                              parts: [{ type: "text", text: prompt }]
+                            });
+                          }}
+                        >
+                          {prompt}
+                        </Button>
+                      ))}
+                    </div>
+                  }
+                />
+              )}
+
+              {messages.map((message: UIMessage, index: number) => {
+                const isUser = message.role === "user";
+                const isLastAssistant =
+                  message.role === "assistant" && index === messages.length - 1;
+
+                return (
+                  <div key={message.id} className="space-y-2">
+                    {showDebug && (
+                      <pre className="text-[11px] text-kumo-subtle bg-kumo-control rounded-lg p-3 overflow-auto max-h-64">
+                        {JSON.stringify(message, null, 2)}
+                      </pre>
+                    )}
+
+                    {/* Tool parts */}
+                    {message.parts.filter(isToolUIPart).map((part) => (
+                      <ToolPartView
+                        key={part.toolCallId}
+                        part={part}
+                        addToolApprovalResponse={addToolApprovalResponse}
+                      />
+                    ))}
+
+                    {/* Reasoning parts */}
+                    {message.parts
+                      .filter(
+                        (part) =>
+                          part.type === "reasoning" &&
+                          (part as { text?: string }).text?.trim()
+                      )
+                      .map((part, i) => {
+                        const reasoning = part as {
+                          type: "reasoning";
+                          text: string;
+                          state?: "streaming" | "done";
+                        };
+                        const isDone = reasoning.state === "done" || !isStreaming;
+                        return (
+                          <div key={i} className="flex justify-start">
+                            <details className="max-w-[85%] w-full" open={!isDone}>
+                              <summary className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg bg-purple-500/10 border border-purple-500/20 text-sm select-none">
+                                <BrainIcon size={14} className="text-purple-400" />
+                                <span className="font-medium text-kumo-default">
+                                  Reasoning
+                                </span>
+                                {isDone ? (
+                                  <span className="text-xs text-kumo-success">
+                                    Complete
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-kumo-brand">
+                                    Thinking...
+                                  </span>
+                                )}
+                                <CaretDownIcon
+                                  size={14}
+                                  className="ml-auto text-kumo-inactive"
+                                />
+                              </summary>
+                              <pre className="mt-2 px-3 py-2 rounded-lg bg-kumo-control text-xs text-kumo-default whitespace-pre-wrap overflow-auto max-h-64">
+                                {reasoning.text}
+                              </pre>
+                            </details>
+                          </div>
+                        );
+                      })}
+
+                    {/* Text parts */}
+                    {message.parts
+                      .filter((part) => part.type === "text")
+                      .map((part, i) => {
+                        const text = (part as { type: "text"; text: string }).text;
+                        if (!text) return null;
+
+                        if (isUser) {
+                          return (
+                            <div key={i} className="flex justify-end">
+                              <div className="max-w-[85%] px-4 py-2.5 rounded-2xl rounded-br-md bg-kumo-contrast text-kumo-inverse leading-relaxed">
+                                {text}
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div key={i} className="flex justify-start">
+                            <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-kumo-base text-kumo-default leading-relaxed">
+                              <Streamdown
+                                className="sd-theme rounded-2xl rounded-bl-md p-3"
+                                controls={false}
+                                isAnimating={isLastAssistant && isStreaming}
+                              >
+                                {text}
+                              </Streamdown>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                );
+              })}
+
+              <div ref={messagesEndRef} />
+            </div>
+          </div>
+
+          {/* Input */}
+          <div className="border-t border-kumo-line bg-kumo-base">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                send();
+              }}
+              className="max-w-3xl mx-auto px-5 py-4"
+            >
+              <div className="flex items-end gap-3 rounded-xl border border-kumo-line bg-kumo-base p-3 shadow-sm focus-within:ring-2 focus-within:ring-kumo-ring focus-within:border-transparent transition-shadow">
+                <InputArea
+                  ref={textareaRef}
+                  value={input}
+                  onValueChange={setInput}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      send();
+                    }
+                  }}
+                  onInput={(e) => {
+                    const el = e.currentTarget;
+                    el.style.height = "auto";
+                    el.style.height = `${el.scrollHeight}px`;
+                  }}
+                  placeholder="Send a message..."
+                  disabled={!connected || isStreaming}
+                  rows={1}
+                  className="flex-1 ring-0! focus:ring-0! shadow-none! bg-transparent! outline-none! resize-none max-h-40"
+                />
+                {isStreaming ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    shape="square"
+                    aria-label="Stop generation"
+                    icon={<StopIcon size={18} />}
+                    onClick={stop}
+                    className="mb-0.5"
+                  />
+                ) : (
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    shape="square"
+                    aria-label="Send message"
+                    disabled={!input.trim() || !connected}
+                    icon={<PaperPlaneRightIcon size={18} />}
+                    className="mb-0.5"
+                  />
+                )}
+              </div>
+            </form>
+          </div>
+        </div>
+
       </div>
     </div>
   );
