@@ -81,6 +81,6 @@ npm run dev
 
 
 ## Screenshots
-![Completed Steps](/screenshots/image.png)
-![Planning a Goal](/screenshots/image-2.png)
-![Chaning Step Status](/screenshots/image-2.png)
+![Completed Steps](cf-app/public/screenshots/image.png)
+![Planning a Goal](cf-app/public/screenshots/image-1.png)
+![Chaning Step Status](cf-app/public/screenshots/image-2.png)
