@@ -1,5 +1,6 @@
 import type { Goal, StepStatus } from "../types";
 import { Surface, Text, Badge, Button } from "@cloudflare/kumo";
+import { useState } from "react";
 
 
 interface GoalPanelProps {
@@ -9,6 +10,13 @@ interface GoalPanelProps {
 
 
 export function GoalPanel({ goals, onUpdateStep }: GoalPanelProps) {
+  // Local state to track which goal/step is being edited, and the draft title/description
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+
+
+
+
   if (goals.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 px-8 text-center">
@@ -29,7 +37,36 @@ export function GoalPanel({ goals, onUpdateStep }: GoalPanelProps) {
         return (
           <Surface key={goal.id} className="rounded-xl ring ring-kumo-line p-4 space-y-3">
             <div className="flex items-start justify-between gap-2">
-              <Text bold size="sm">{goal.title}</Text>
+              {editingId === `goal-title-${goal.id}` ? (
+                <input
+                  autoFocus
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onBlur={() => {
+                    console.log("saving:", draft);
+                    setEditingId(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      // save logic will go here
+                      console.log("saving:", draft);
+                      setEditingId(null);
+                    }
+                    if (e.key === "Escape") setEditingId(null);
+                  }}
+                  className="w-full bg-kumo-base border border-kumo-accent rounded-md px-2 py-1 text-sm font-bold text-kumo-default outline-none"
+                />
+              ) : (
+                <span
+                  className="cursor-pointer hover:text-kumo-accent transition-colors"
+                  onClick={() => {
+                    setEditingId(`goal-title-${goal.id}`);
+                    setDraft(goal.title);
+                  }}
+                >
+                  <Text bold size="sm">{goal.title}</Text>
+                </span>
+              )}
               <Badge variant={pct === 100 ? "primary" : "secondary"}>
                 {pct === 100 ? "Done" : `${completed}/${total}`}
               </Badge>
