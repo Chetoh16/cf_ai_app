@@ -81,6 +81,6 @@ npm run dev
 
 
 ## Screenshots
-![Completed Steps](\screenshots\image-1.png)
-![Planning a Goal](\screenshots\image-1.png)
-![Chaning Step Status](\screenshots\image-1.png)
+![Completed Steps](screenshots\image-1.png)
+![Planning a Goal](screenshots\image-1.png)
+![Chaning Step Status](screenshots\image-1.png)
