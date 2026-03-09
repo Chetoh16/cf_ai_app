@@ -1,7 +1,7 @@
 import type { Goal, StepStatus } from "../types";
 import { Surface, Text, Badge, Button } from "@cloudflare/kumo";
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 
 
 interface GoalPanelProps {
@@ -9,10 +9,11 @@ interface GoalPanelProps {
   onUpdateStep: (goalId: string, stepId: string, status: StepStatus) => void;
   onRenameGoal: (goalId: string, newTitle: string) => void;
   onRenameStep: (goalId: string, stepId: string, newTitle: string, newDescription: string) => void;
+  onDeleteGoal: (goalId: string) => void;
 }
 
 
-export function GoalPanel({ goals, onUpdateStep, onRenameGoal, onRenameStep }: GoalPanelProps) {
+export function GoalPanel({ goals, onUpdateStep, onRenameGoal, onRenameStep, onDeleteGoal }: GoalPanelProps) {
   // Local state to track which goal/step is being edited, and the draft title/description
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -23,6 +24,10 @@ export function GoalPanel({ goals, onUpdateStep, onRenameGoal, onRenameStep }: G
   / - the value is a boolean (true = collapsed, false = expanded)
   */
   const [collapsedGoals, setCollapsedGoals] = useState<Record<string, boolean>>({});
+
+  // State to track which goal is being confirmed for deletion
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
 
   const toggleGoal = (goalId: string) => {
     setCollapsedGoals((prev) => ({
@@ -65,7 +70,7 @@ export function GoalPanel({ goals, onUpdateStep, onRenameGoal, onRenameStep }: G
 
         return (
           <Surface key={goal.id} className="rounded-xl ring ring-kumo-line overflow-hidden">
-            {/* Goal header row — coloured when expanded */}
+            {/* Goal header row - coloured when expanded */}
             <div
               className={`flex items-center justify-between gap-2 cursor-pointer px-4 py-3 transition-colors duration-400 ${headerBg}`}
               onClick={() => toggleGoal(goal.id)}
@@ -107,14 +112,27 @@ export function GoalPanel({ goals, onUpdateStep, onRenameGoal, onRenameStep }: G
                 </Badge>
               </div>
 
-              {/* Chevron: points up when expanded, down when collapsed */}
-              <ChevronDown
-                size={16}
-                className={`transition-transform duration-400 shrink-0 ${headerChevron} ${isExpanded ? "rotate-180" : ""}`}
-              />
+              <div className="flex items-center gap-2">
+                {/* Delete button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setConfirmDeleteId(goal.id);
+                  }}
+                  className="text-red-300 hover:text-red-500 transition-colors"
+                >
+                  <X size={16} />
+                </button>
+
+                {/* Chevron: points up when expanded, down when collapsed */}
+                <ChevronDown
+                  size={16}
+                  className={`transition-transform duration-200 shrink-0 ${headerChevron} ${isExpanded ? "rotate-180" : ""}`}
+                />
+              </div>
             </div>
 
-            {/* Progress bar — always visible */}
+            {/* Progress bar - always visible */}
             <div className="w-full h-1.5 bg-kumo-line overflow-hidden">
               <div
                 className={`h-full transition-all duration-500 ${isDone ? "bg-green-500" : "bg-blue-500"}`}
@@ -122,7 +140,7 @@ export function GoalPanel({ goals, onUpdateStep, onRenameGoal, onRenameStep }: G
               />
             </div>
 
-            {/* Steps — only visible when expanded */}
+            {/* Steps - only visible when expanded */}
             <div
               className="overflow-hidden transition-all duration-400 ease-in-out"
               style={{ maxHeight: isExpanded ? "1000px" : "0px" }}
@@ -218,8 +236,35 @@ export function GoalPanel({ goals, onUpdateStep, onRenameGoal, onRenameStep }: G
                 ))}
               </div>
             </div>
+            {/* Confirmation dialog */}
+            {confirmDeleteId === goal.id && (
+              <div className="px-4 py-3 bg-red-50 border-t border-red-200 flex items-center justify-between gap-2">
+                <span className="text-xs text-red-700">Delete this goal?</span>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setConfirmDeleteId(null)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    className="bg-red-600 hover:bg-red-700 border-red-600"
+                    onClick={() => {
+                      onDeleteGoal(goal.id);
+                      setConfirmDeleteId(null);
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            )}
           </Surface>
         );
+        
       })}
     </div>
   );

@@ -99,6 +99,22 @@ export class ChatAgent extends AIChatAgent<Env, GoalState> {
     
   }
 
+  // Function to delete a goal
+  @callable()
+  async deleteGoal(goalId: string){
+    const goal = this.state.goals.find((g) => g.id === goalId);
+    if (!goal){
+      return { deleted: false, error: "Goal not found" };
+    }
+    
+    this.setState({
+      goals: this.state.goals.filter((g) => g.id !== goalId)
+    });
+    
+    return { deleted: true, goalId, goalTitle: goal.title };
+  }
+  
+
   @callable()
   async updateStepStatus(goalId: string, stepId: string, status: StepStatus) {
     const goal = this.state.goals.find((g) => g.id === goalId);
