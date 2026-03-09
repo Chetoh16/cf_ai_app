@@ -1,6 +1,7 @@
 import type { Goal, StepStatus } from "../types";
 import { Surface, Text, Badge, Button } from "@cloudflare/kumo";
 import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 
 
 interface GoalPanelProps {
@@ -16,6 +17,24 @@ export function GoalPanel({ goals, onUpdateStep, onRenameGoal, onRenameStep }: G
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
 
+  /* Toggle on/off goals
+  / Record<string, boolean> = an object where:
+  / - the key is a string (the goalID e.g. "abc123")
+  / - the value is a boolean (true = collapsed, false = expanded)
+  */
+  const [collapsedGoals, setCollapsedGoals] = useState<Record<string, boolean>>({});
+
+  const toggleGoal = (goalId: string) => {
+    setCollapsedGoals((prev) => ({
+      // copy all existing goal collapsed states
+      ...prev,
+      // use goalId as the key, and flip its current value
+      // if it was undefined (never clicked), !undefined = true (collapsed)
+      // if it was true (collapsed), !true = false (expanded)
+      // if it was false (expanded), !false = true (collapsed)
+      [goalId]: !prev[goalId]
+    }));
+  };
 
 
 
@@ -38,7 +57,10 @@ export function GoalPanel({ goals, onUpdateStep, onRenameGoal, onRenameStep }: G
 
         return (
           <Surface key={goal.id} className="rounded-xl ring ring-kumo-line p-4 space-y-3">
-            <div className="flex items-start justify-between gap-2">
+            <div 
+              className="flex items-start justify-between gap-2 cursor-pointer"
+              onClick={() => toggleGoal(goal.id)}
+            >
               {editingId === `goal-title-${goal.id}` ? (
                 <input
                   autoFocus
@@ -60,7 +82,8 @@ export function GoalPanel({ goals, onUpdateStep, onRenameGoal, onRenameStep }: G
               ) : (
                 <span
                   className="cursor-pointer hover:text-kumo-accent transition-colors"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setEditingId(`goal-title-${goal.id}`);
                     setDraft(goal.title);
                   }}
@@ -68,9 +91,16 @@ export function GoalPanel({ goals, onUpdateStep, onRenameGoal, onRenameStep }: G
                   <Text bold size="sm">{goal.title}</Text>
                 </span>
               )}
-              <Badge variant={pct === 100 ? "primary" : "secondary"}>
-                {pct === 100 ? "Done" : `${completed}/${total}`}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant={pct === 100 ? "primary" : "secondary"}>
+                  {pct === 100 ? "Done" : `${completed}/${total}`}
+                </Badge>
+                {/* Chevron rotates -90deg when collapsed, points down when expanded */}
+                <ChevronDown
+                  size={16}
+                  className={`text-kumo-inactive transition-transform duration-200 ${collapsedGoals[goal.id] ? "-rotate-90" : ""}`}
+                />
+              </div>
             </div>
             <div className="w-full h-1.5 rounded-full bg-kumo-line overflow-hidden">
               <div
@@ -78,6 +108,7 @@ export function GoalPanel({ goals, onUpdateStep, onRenameGoal, onRenameStep }: G
                 style={{ width: `${pct}%` }}
               />
             </div>
+            {!collapsedGoals[goal.id] && (
             <div className="space-y-2">
               {goal.steps.map((step) => (
                 <div key={step.id} className="flex items-start gap-3 p-2.5 rounded-lg bg-kumo-elevated">
@@ -168,12 +199,10 @@ export function GoalPanel({ goals, onUpdateStep, onRenameGoal, onRenameStep }: G
                 </div>
               ))}
             </div>
+            )}
           </Surface>
         );
       })}
     </div>
   );
-
-
-
 }

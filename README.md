@@ -45,6 +45,7 @@ The agent exposes tools to the LLM such as:
 - `replanGoal` — strips incomplete steps so the LLM can replan
 - `deleteGoal` — removes a goal entirely
 
+
 ## Getting started
 
 ### Prerequisites
