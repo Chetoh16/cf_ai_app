@@ -114,7 +114,37 @@ export function GoalPanel({ goals, onUpdateStep, onRenameGoal, onRenameStep }: G
                       )}
                     </span>
                     <span className="mt-0.5 block">
-                    <Text size="xs" variant="secondary">{step.description}</Text>
+                      {editingId === `step-desc-${step.id}` ? (
+                        <textarea
+                          autoFocus
+                          value={draft}
+                          onChange={(e) => setDraft(e.target.value)}
+                          onBlur={() => {
+                            onRenameStep(goal.id, step.id, step.title, draft);
+                            setEditingId(null);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault();
+                              onRenameStep(goal.id, step.id, step.title, draft);
+                              setEditingId(null);
+                            }
+                            if (e.key === "Escape") setEditingId(null);
+                          }}
+                          rows={2}
+                          className="w-full bg-kumo-base border border-kumo-accent rounded-md px-2 py-1 text-xs text-kumo-default outline-none resize-none"
+                        />
+                      ) : (
+                        <span
+                          className="cursor-pointer hover:text-kumo-accent transition-colors"
+                          onClick={() => {
+                            setEditingId(`step-desc-${step.id}`);
+                            setDraft(step.description);
+                          }}
+                        >
+                          <Text size="xs" variant="secondary">{step.description}</Text>
+                        </span>
+                      )}
                     </span>
                   </div>
                   <Button 
