@@ -48,7 +48,7 @@ export function GoalPanel({ goals, onUpdateStep, onRenameGoal, onRenameStep }: G
   }
 
   return(
-    <div className="flex flex-col gap-4 overflow-y-auto h-full px-4 py-4">
+    <div className="flex flex-col gap-4 px-4 py-4">
       {goals.map((goal) => {
         const completed = goal.steps.filter((s) => s.status === "Completed").length;
         const total = goal.steps.length;
