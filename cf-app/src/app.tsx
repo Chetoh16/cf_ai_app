@@ -557,15 +557,24 @@ function Chat() {
       <div className="flex flex-1 overflow-hidden">
 
         {/* Left - Goal panel */}
-        <aside className="w-96 shrink-0 border-r border-kumo-line bg-kumo-base flex flex-col">
+        <aside className="w-96 shrink-0 border-r border-kumo-line bg-kumo-base flex flex-col h-full overflow-hidden">
           <div className="px-4 py-3 border-b border-kumo-line shrink-0">
             <Text bold size="sm">Goals</Text>
           </div>
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-y-auto">
             <GoalPanel goals={goalState.goals}
               onUpdateStep={async(goalId: string, stepId: string, nextStatus: StepStatus) => {
                 await agent.call("updateStepStatus", [goalId, stepId, nextStatus]);
               }}
+              onRenameGoal={async(goalId: string, newTitle: string) => {
+                await agent.call("renameGoal", [goalId, newTitle]);
+              }}
+              onRenameStep={async(goalId: string, stepId: string, newTitle: string, newDescription: string) => {
+                await agent.call("renameStep", [goalId, stepId, newTitle, newDescription]);
+              }}        
+              onDeleteGoal={async(goalId: string) => {
+                await agent.call("deleteGoal", [goalId]);
+              }}    
             />
           </div>
         </aside>

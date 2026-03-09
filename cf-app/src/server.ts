@@ -51,6 +51,70 @@ export class ChatAgent extends AIChatAgent<Env, GoalState> {
     await this.removeMcpServer(serverId);
   }
 
+  // Function to rename a goal's title
+  @callable()
+  async renameGoal(goalId: string, newTitle:string){
+    const goal = this.state.goals.find((g) => g.id === goalId);
+    if (!goal){
+      return { renamed: false, error: "Goal not found" };
+    }
+    
+    this.setState({
+      goals: this.state.goals.map((g) =>
+        g.id === goalId ? { ...g, title: newTitle } : g
+      ),
+    });
+
+    return { renamed: true, goalId, newTitle };
+
+  }
+
+  // Function to rename a step's title and description
+  @callable()
+  async renameStep(goalId: string, stepId: string, newTitle: string, newDescription: string){
+    const goal = this.state.goals.find((g) => g.id === goalId);
+    if (!goal){
+      return { renamed: false, error: "Goal not found" };
+    }
+    
+    const step = goal.steps.find((s) => s.id === stepId);
+    if (!step){
+      return { renamed: false, error: "Step not found" };
+    }
+    
+    this.setState({
+      goals: this.state.goals.map((g) =>
+        g.id === goalId
+          ? {
+              ...g,
+              steps: g.steps.map((s) =>
+                s.id === stepId ? { ...s, title: newTitle, description: newDescription } : s
+              ),
+            }
+          : g
+      ),
+    });
+
+    return { renamed: true, goalId, stepId, newTitle, newDescription };
+    
+  }
+
+  // Function to delete a goal
+  @callable()
+  async deleteGoal(goalId: string){
+    const goal = this.state.goals.find((g) => g.id === goalId);
+    if (!goal){
+      return { deleted: false, error: "Goal not found" };
+    }
+    
+    this.setState({
+      goals: this.state.goals.filter((g) => g.id !== goalId)
+    });
+    
+    return { deleted: true, goalId, goalTitle: goal.title };
+  }
+
+
   @callable()
   async updateStepStatus(goalId: string, stepId: string, status: StepStatus) {
     const goal = this.state.goals.find((g) => g.id === goalId);
@@ -104,6 +168,7 @@ export class ChatAgent extends AIChatAgent<Env, GoalState> {
     "- When a user wants to delete a goal, call deleteGoal with the correct goal ID.\n" +
     "- When a user is stuck or wants to replan, call replanGoal to clear remaining steps, then add fresh ones.\n" +
     "- Always use the exact goal and step IDs shown above — never invent them.\n" +
+    "- When the user asks to list or see their goals, read them ONLY from the goals listed above and NEVER guess from chat history.\n" +
     "- After any tool call, give a short friendly confirmation.\n" +
     "- Use Not Started, In Progress, Completed when listing steps.";
 
@@ -261,6 +326,20 @@ export class ChatAgent extends AIChatAgent<Env, GoalState> {
             };
           },
         }),
+
+        listGoals: tool({
+          description: "List all current goals and their steps. Call this when the user asks to see their goals or progress. Always read directly from the current state — never guess or infer from chat history.",
+          inputSchema: z.object({}),
+          execute: async () => {
+            return {
+              goals: this.state.goals.map((g) => ({
+                id: g.id,
+                title: g.title,
+                steps: g.steps.map((s) => ({ id: s.id, title: s.title, status: s.status }))
+              }))
+            };
+          }
+        })
 
 
       },
