@@ -69,6 +69,36 @@ export class ChatAgent extends AIChatAgent<Env, GoalState> {
 
   }
 
+  // Function to rename a step's title and description
+  @callable()
+  async renameStep(goalId: string, stepId: string, newTitle: string, newDescription: string){
+    const goal = this.state.goals.find((g) => g.id === goalId);
+    if (!goal){
+      return { renamed: false, error: "Goal not found" };
+    }
+    
+    const step = goal.steps.find((s) => s.id === stepId);
+    if (!step){
+      return { renamed: false, error: "Step not found" };
+    }
+    
+    this.setState({
+      goals: this.state.goals.map((g) =>
+        g.id === goalId
+          ? {
+              ...g,
+              steps: g.steps.map((s) =>
+                s.id === stepId ? { ...s, title: newTitle, description: newDescription } : s
+              ),
+            }
+          : g
+      ),
+    });
+
+    return { renamed: true, goalId, stepId, newTitle, newDescription };
+    
+  }
+
   @callable()
   async updateStepStatus(goalId: string, stepId: string, status: StepStatus) {
     const goal = this.state.goals.find((g) => g.id === goalId);

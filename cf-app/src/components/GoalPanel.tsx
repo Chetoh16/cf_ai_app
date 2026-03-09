@@ -7,10 +7,11 @@ interface GoalPanelProps {
   goals: Goal[];
   onUpdateStep: (goalId: string, stepId: string, status: StepStatus) => void;
   onRenameGoal: (goalId: string, newTitle: string) => void;
+  onRenameStep: (goalId: string, stepId: string, newTitle: string, newDescription: string) => void;
 }
 
 
-export function GoalPanel({ goals, onUpdateStep, onRenameGoal }: GoalPanelProps) {
+export function GoalPanel({ goals, onUpdateStep, onRenameGoal, onRenameStep }: GoalPanelProps) {
   // Local state to track which goal/step is being edited, and the draft title/description
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -82,7 +83,35 @@ export function GoalPanel({ goals, onUpdateStep, onRenameGoal }: GoalPanelProps)
                 <div key={step.id} className="flex items-start gap-3 p-2.5 rounded-lg bg-kumo-elevated">
                   <div className="flex-1 min-w-0">
                     <span className={step.status === "Completed" ? "line-through text-kumo-subtle" : ""}>
-                    <Text size="xs" bold>{step.title}</Text>
+                      {editingId === `step-title-${step.id}` ? (
+                        <input
+                          autoFocus
+                          value={draft}
+                          onChange={(e) => setDraft(e.target.value)}
+                          onBlur={() => {
+                            onRenameStep(goal.id,step.id, draft, step.description);
+                            setEditingId(null);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              onRenameStep(goal.id,step.id, draft, step.description);
+                              setEditingId(null);
+                            }
+                            if (e.key === "Escape") setEditingId(null);
+                          }}
+                          className="w-full bg-kumo-base border border-kumo-accent rounded-md px-2 py-1 text-sm font-bold text-kumo-default outline-none"
+                        />
+                      ) : (
+                        <span
+                          className="cursor-pointer hover:text-kumo-accent transition-colors"
+                          onClick={() => {
+                            setEditingId(`step-title-${step.id}`);
+                            setDraft(step.title);
+                          }}
+                        >
+                          <Text bold size="sm">{step.title}</Text>
+                        </span>
+                      )}
                     </span>
                     <span className="mt-0.5 block">
                     <Text size="xs" variant="secondary">{step.description}</Text>
