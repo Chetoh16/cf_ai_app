@@ -44,7 +44,7 @@ The agent exposes tools to the LLM such as:
 - `updateStep` — changes a step's status
 - `replanGoal` — strips incomplete steps so the LLM can replan
 - `deleteGoal` — removes a goal entirely
-- `listGoals` — lists existings goals instead of relying on chat (and accidently hallucinating when some of the goals are deleted via UI)
+- `listGoals` — lists existing goals instead of relying on the chat (and accidently hallucinating when some of the goals are deleted via UI)
 
 ## Getting started
 
