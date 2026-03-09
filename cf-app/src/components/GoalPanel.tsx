@@ -37,7 +37,6 @@ export function GoalPanel({ goals, onUpdateStep, onRenameGoal, onRenameStep }: G
   };
 
 
-
   if (goals.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 px-8 text-center">
@@ -54,134 +53,153 @@ export function GoalPanel({ goals, onUpdateStep, onRenameGoal, onRenameStep }: G
         const completed = goal.steps.filter((s) => s.status === "Completed").length;
         const total = goal.steps.length;
         const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+        const isExpanded = !collapsedGoals[goal.id];
+        const isDone = pct === 100;
+
+        // Header background: green if done, blue if in progress, default if collapsed
+        const headerBg = isDone ? "bg-green-600" : "bg-blue-600";
+
+        // Text colour on the coloured header should be white for readability
+        const headerText = "text-white";
+        const headerChevron = "text-white";
 
         return (
-          <Surface key={goal.id} className="rounded-xl ring ring-kumo-line p-4 space-y-3">
-            <div 
-              className="flex items-start justify-between gap-2 cursor-pointer"
+          <Surface key={goal.id} className="rounded-xl ring ring-kumo-line overflow-hidden">
+            {/* Goal header row — coloured when expanded */}
+            <div
+              className={`flex items-center justify-between gap-2 cursor-pointer px-4 py-3 transition-colors duration-400 ${headerBg}`}
               onClick={() => toggleGoal(goal.id)}
             >
-              {editingId === `goal-title-${goal.id}` ? (
-                <input
-                  autoFocus
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onBlur={() => {
-                    onRenameGoal(goal.id, draft);
-                    setEditingId(null);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                {editingId === `goal-title-${goal.id}` ? (
+                  <input
+                    autoFocus
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onBlur={() => {
                       onRenameGoal(goal.id, draft);
                       setEditingId(null);
-                    }
-                    if (e.key === "Escape") setEditingId(null);
-                  }}
-                  className="w-full bg-kumo-base border border-kumo-accent rounded-md px-2 py-1 text-sm font-bold text-kumo-default outline-none"
-                />
-              ) : (
-                <span
-                  className="cursor-pointer hover:text-kumo-accent transition-colors"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEditingId(`goal-title-${goal.id}`);
-                    setDraft(goal.title);
-                  }}
-                >
-                  <Text bold size="sm">{goal.title}</Text>
-                </span>
-              )}
-              <div className="flex items-center gap-2">
-                <Badge variant={pct === 100 ? "primary" : "secondary"}>
-                  {pct === 100 ? "Done" : `${completed}/${total}`}
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        onRenameGoal(goal.id, draft);
+                        setEditingId(null);
+                      }
+                      if (e.key === "Escape") setEditingId(null);
+                    }}
+                    className="w-full bg-white/20 border border-white/40 rounded-md px-2 py-1 text-sm font-bold text-white outline-none placeholder:text-white/60"
+                  />
+                ) : (
+                  <span
+                    className={`cursor-pointer transition-colors hover:opacity-80 font-bold text-sm ${headerText}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingId(`goal-title-${goal.id}`);
+                      setDraft(goal.title);
+                    }}
+                  >
+                    {goal.title}
+                  </span>
+                )}
+                {/* Badge colours adjust for readability on coloured background */}
+                <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
+                  {isDone ? "Done" : `${completed}/${total}`}
                 </Badge>
-                {/* Chevron rotates -90deg when collapsed, points down when expanded */}
-                <ChevronDown
-                  size={16}
-                  className={`text-kumo-inactive transition-transform duration-200 ${collapsedGoals[goal.id] ? "-rotate-90" : ""}`}
-                />
               </div>
+
+              {/* Chevron: points up when expanded, down when collapsed */}
+              <ChevronDown
+                size={16}
+                className={`transition-transform duration-400 shrink-0 ${headerChevron} ${isExpanded ? "rotate-180" : ""}`}
+              />
             </div>
-            <div className="w-full h-1.5 rounded-full bg-kumo-line overflow-hidden">
+
+            {/* Progress bar — always visible */}
+            <div className="w-full h-1.5 bg-kumo-line overflow-hidden">
               <div
-                className="h-full rounded-full bg-kumo-accent transition-all duration-500"
+                className={`h-full transition-all duration-500 ${isDone ? "bg-green-500" : "bg-blue-500"}`}
                 style={{ width: `${pct}%` }}
               />
             </div>
-            {!collapsedGoals[goal.id] && (
-            <div className="space-y-2">
-              {goal.steps.map((step) => (
-                <div key={step.id} className="flex items-start gap-3 p-2.5 rounded-lg bg-kumo-elevated">
-                  <div className="flex-1 min-w-0">
-                    <span className={step.status === "Completed" ? "line-through text-kumo-subtle" : ""}>
-                      {editingId === `step-title-${step.id}` ? (
-                        <input
-                          autoFocus
-                          value={draft}
-                          onChange={(e) => setDraft(e.target.value)}
-                          onBlur={() => {
-                            onRenameStep(goal.id,step.id, draft, step.description);
-                            setEditingId(null);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              onRenameStep(goal.id,step.id, draft, step.description);
+
+            {/* Steps — only visible when expanded */}
+            <div
+              className="overflow-hidden transition-all duration-400 ease-in-out"
+              style={{ maxHeight: isExpanded ? "1000px" : "0px" }}
+            >
+              <div className="space-y-2 p-4">
+                {goal.steps.map((step) => (
+                  <div key={step.id} className="flex items-start gap-3 p-2.5 rounded-lg bg-kumo-elevated">
+                    <div className="flex-1 min-w-0">
+                      <span className={step.status === "Completed" ? "line-through text-kumo-subtle" : ""}>
+                        {editingId === `step-title-${step.id}` ? (
+                          <input
+                            autoFocus
+                            value={draft}
+                            onChange={(e) => setDraft(e.target.value)}
+                            onBlur={() => {
+                              onRenameStep(goal.id, step.id, draft, step.description);
                               setEditingId(null);
-                            }
-                            if (e.key === "Escape") setEditingId(null);
-                          }}
-                          className="w-full bg-kumo-base border border-kumo-accent rounded-md px-2 py-1 text-sm font-bold text-kumo-default outline-none"
-                        />
-                      ) : (
-                        <span
-                          className="cursor-pointer hover:text-kumo-accent transition-colors"
-                          onClick={() => {
-                            setEditingId(`step-title-${step.id}`);
-                            setDraft(step.title);
-                          }}
-                        >
-                          <Text bold size="sm">{step.title}</Text>
-                        </span>
-                      )}
-                    </span>
-                    <span className="mt-0.5 block">
-                      {editingId === `step-desc-${step.id}` ? (
-                        <textarea
-                          autoFocus
-                          value={draft}
-                          onChange={(e) => setDraft(e.target.value)}
-                          onBlur={() => {
-                            onRenameStep(goal.id, step.id, step.title, draft);
-                            setEditingId(null);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && !e.shiftKey) {
-                              e.preventDefault();
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                onRenameStep(goal.id, step.id, draft, step.description);
+                                setEditingId(null);
+                              }
+                              if (e.key === "Escape") setEditingId(null);
+                            }}
+                            className="w-full bg-kumo-base border border-kumo-accent rounded-md px-2 py-1 text-sm font-bold text-kumo-default outline-none"
+                          />
+                        ) : (
+                          <span
+                            className="cursor-pointer hover:text-kumo-accent transition-colors"
+                            onClick={() => {
+                              setEditingId(`step-title-${step.id}`);
+                              setDraft(step.title);
+                            }}
+                          >
+                            <Text bold size="sm">{step.title}</Text>
+                          </span>
+                        )}
+                      </span>
+                      <span className="mt-0.5 block">
+                        {editingId === `step-desc-${step.id}` ? (
+                          <textarea
+                            autoFocus
+                            value={draft}
+                            onChange={(e) => setDraft(e.target.value)}
+                            onBlur={() => {
                               onRenameStep(goal.id, step.id, step.title, draft);
                               setEditingId(null);
-                            }
-                            if (e.key === "Escape") setEditingId(null);
-                          }}
-                          rows={2}
-                          className="w-full bg-kumo-base border border-kumo-accent rounded-md px-2 py-1 text-xs text-kumo-default outline-none resize-none"
-                        />
-                      ) : (
-                        <span
-                          className="cursor-pointer hover:text-kumo-accent transition-colors"
-                          onClick={() => {
-                            setEditingId(`step-desc-${step.id}`);
-                            setDraft(step.description);
-                          }}
-                        >
-                          <Text size="xs" variant="secondary">{step.description}</Text>
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                  <Button 
-                    variant="secondary" 
-                    size="sm" 
-                    onClick={() => {
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                onRenameStep(goal.id, step.id, step.title, draft);
+                                setEditingId(null);
+                              }
+                              if (e.key === "Escape") setEditingId(null);
+                            }}
+                            rows={2}
+                            className="w-full bg-kumo-base border border-kumo-accent rounded-md px-2 py-1 text-xs text-kumo-default outline-none resize-none"
+                          />
+                        ) : (
+                          <span
+                            className="cursor-pointer hover:text-kumo-accent transition-colors"
+                            onClick={() => {
+                              setEditingId(`step-desc-${step.id}`);
+                              setDraft(step.description);
+                            }}
+                          >
+                            <Text size="xs" variant="secondary">{step.description}</Text>
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
                         let nextStatus: StepStatus = "Not Started";
 
                         // Cycle through statuses: Not Started -> In Progress -> Completed -> Not Started
@@ -190,16 +208,16 @@ export function GoalPanel({ goals, onUpdateStep, onRenameGoal, onRenameStep }: G
                         else if (step.status === "Completed") nextStatus = "Not Started";
 
                         onUpdateStep(goal.id, step.id, nextStatus);
-                    }}
-                  >
-                    {step.status === "Not Started" && "⏳ Not Started"}
-                    {step.status === "In Progress" && "🔄 In Progress"}
-                    {step.status === "Completed" && "✅ Completed"}
-                  </Button>
-                </div>
-              ))}
+                      }}
+                    >
+                      {step.status === "Not Started" && "⏳ Not Started"}
+                      {step.status === "In Progress" && "🔄 In Progress"}
+                      {step.status === "Completed" && "✅ Completed"}
+                    </Button>
+                  </div>
+                ))}
+              </div>
             </div>
-            )}
           </Surface>
         );
       })}
