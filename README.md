@@ -51,7 +51,6 @@ The agent exposes tools to the LLM such as:
 ### Prerequisites
 
 - Node.js 18+
-- Cloudflare account
 - Wrangler v4.71.0+
 
 ### Install
