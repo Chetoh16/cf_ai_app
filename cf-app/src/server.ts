@@ -113,7 +113,7 @@ export class ChatAgent extends AIChatAgent<Env, GoalState> {
     
     return { deleted: true, goalId, goalTitle: goal.title };
   }
-  
+
 
   @callable()
   async updateStepStatus(goalId: string, stepId: string, status: StepStatus) {
@@ -168,6 +168,7 @@ export class ChatAgent extends AIChatAgent<Env, GoalState> {
     "- When a user wants to delete a goal, call deleteGoal with the correct goal ID.\n" +
     "- When a user is stuck or wants to replan, call replanGoal to clear remaining steps, then add fresh ones.\n" +
     "- Always use the exact goal and step IDs shown above — never invent them.\n" +
+    "- When the user asks to list or see their goals, read them ONLY from the goals listed above and NEVER guess from chat history.\n" +
     "- After any tool call, give a short friendly confirmation.\n" +
     "- Use Not Started, In Progress, Completed when listing steps.";
 
@@ -325,6 +326,20 @@ export class ChatAgent extends AIChatAgent<Env, GoalState> {
             };
           },
         }),
+
+        listGoals: tool({
+          description: "List all current goals and their steps. Call this when the user asks to see their goals or progress. Always read directly from the current state — never guess or infer from chat history.",
+          inputSchema: z.object({}),
+          execute: async () => {
+            return {
+              goals: this.state.goals.map((g) => ({
+                id: g.id,
+                title: g.title,
+                steps: g.steps.map((s) => ({ id: s.id, title: s.title, status: s.status }))
+              }))
+            };
+          }
+        })
 
 
       },
